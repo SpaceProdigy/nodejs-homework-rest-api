@@ -9,6 +9,7 @@ const userSubscriptionValidate = validateBody(
   userSchema.userUpdateSubscriptionSchema
 );
 const userAvatarValidate = validateBody(userSchema.userUpdateAvatarSchema);
+const userEmailValidate = validateBody(userSchema.userEmailValidateShema);
 
 export default {
   userSignUPtValidate,
@@ -16,4 +17,5 @@ export default {
   userRefreshValidate,
   userSubscriptionValidate,
   userAvatarValidate,
+  userEmailValidate,
 };

@@ -23,10 +23,15 @@ export const userUpdateAvatarSchema = Joi.object({
   subscription: Joi.string(),
 });
 
+export const userEmailValidateShema = Joi.object({
+  email: Joi.string().required(),
+});
+
 export default {
   userRefreshTokenSchema,
   userSignupSchema,
   userSigninSchema,
   userUpdateSubscriptionSchema,
   userUpdateAvatarSchema,
+  userEmailValidateShema,
 };

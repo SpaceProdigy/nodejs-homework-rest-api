@@ -44,4 +44,12 @@ authRouter.patch(
   controllerAuth.updateAvatar
 );
 
+authRouter.get("/users/verify/:verificationToken", controllerAuth.verify);
+
+authRouter.post(
+  "/users/verify",
+  validationUser.userEmailValidate,
+  controllerAuth.resendVerifyEmail
+);
+
 export default authRouter;
