@@ -3,10 +3,11 @@ import jwt from "jsonwebtoken";
 import fs from "fs/promises";
 import path from "path";
 import gravatar from "gravatar";
+import { nanoid } from "nanoid";
 
 import User from "../models/User.js";
 
-import { HttpErrors, imgOptimizator } from "../utils/index.js";
+import { HttpErrors, imgOptimizator, sendEmail } from "../utils/index.js";
 
 import { controllerWrapper } from "../decorators/index.js";
 
@@ -38,12 +39,16 @@ const signup = async (req, res) => {
   }
 
   const hashPassword = await bcrypt.hash(password, 10);
+  const verificationToken = nanoid();
 
   const newUser = await User.create({
     ...req.body,
     password: hashPassword,
     avatarURL,
+    verificationToken,
   });
+
+  await sendEmail(email, verificationToken);
 
   res.status(201).json({
     email: newUser.email,
@@ -58,6 +63,10 @@ const signin = async (req, res) => {
 
   if (!user) {
     throw HttpErrors(401, "Email or password invalid");
+  }
+
+  if (!user.verify) {
+    throw HttpErrors(401, "Email not verify");
   }
 
   const passwordCompare = await bcrypt.compare(password, user.password);
@@ -172,6 +181,40 @@ const updateAvatar = async (req, res) => {
   res.json(result);
 };
 
+const verify = async (req, res) => {
+  const { verificationToken } = req.params;
+  const user = await User.findOne({ verificationToken });
+  if (!user) {
+    throw HttpErrors(404);
+  }
+
+  await User.findByIdAndUpdate(user._id, {
+    verify: true,
+    verificationToken: "null",
+  });
+
+  res.json({
+    message: "Email verify success",
+  });
+};
+
+const resendVerifyEmail = async (req, res) => {
+  const { email } = req.body;
+  const user = await User.findOne({ email });
+  if (!user) {
+    throw HttpErrors(404, "email not found");
+  }
+  if (user.verify) {
+    throw HttpErrors(400, "Email already verify");
+  }
+
+  await sendEmail(email, user.verificationToken);
+
+  res.json({
+    message: "Verify email resend success",
+  });
+};
+
 export default {
   signup: controllerWrapper(signup),
   signin: controllerWrapper(signin),
@@ -180,4 +223,6 @@ export default {
   signout: controllerWrapper(signout),
   updateSubscription: controllerWrapper(updateSubscription),
   updateAvatar: controllerWrapper(updateAvatar),
+  verify: controllerWrapper(verify),
+  resendVerifyEmail: controllerWrapper(resendVerifyEmail),
 };
